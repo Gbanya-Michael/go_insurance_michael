@@ -99,7 +99,7 @@ Before getting started, ensure you have:
    rails db:fixtures:load
    ```
 
-   This creates all necessary tables and loads test data from fixtures located in `spec/fixtures/`.
+   This creates all necessary tables and loads test data from fixtures located in `test/fixtures/`.
 
 3. **Start the server**:
 
@@ -207,7 +207,7 @@ The application uses SQLite3 with the following main tables:
 - `premia` - Base premium configuration
 - `quotes_to_destinations` - Join table linking quotes to multiple destinations
 
-Test data is provided in `spec/fixtures/` and can be loaded with `rails db:fixtures:load`.
+Test data is provided in `test/fixtures/` and can be loaded with `rails db:fixtures:load`.
 
 ## Usage Guide
 
@@ -499,7 +499,7 @@ rails db:fixtures:load
 RAILS_ENV=test rails db:fixtures:load
 ```
 
-Note: Fixtures are located in `spec/fixtures/` (RSpec convention). The `rails db:fixtures:load` command will automatically load fixtures from this directory.
+Note: Fixtures are located in `test/fixtures/` (RSpec convention). The `rails db:fixtures:load` command will automatically load fixtures from this directory.
 
 **JavaScript not updating prices:**
 
@@ -527,6 +527,6 @@ rails server -p 3001
 
 - The application uses Tailwind CSS for styling (compiled via the asset pipeline)
 - Real-time premium updates use vanilla JavaScript (no framework dependencies)
-- Test data is provided in `spec/fixtures/`, I removed test folder since I am using Rspec and does not want duplicate data - all YAML files are loaded during setup
+- Test data is provided in `test/fixtures/`, I removed test folder since I am using Rspec and does not want duplicate data - all YAML files are loaded during setup
 - Multiple travellers are fully supported - each traveller's age is used in individual premium calculations
 - The highest zone destination determines pricing for both base premium and add-ons
