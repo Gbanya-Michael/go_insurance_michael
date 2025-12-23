@@ -1,0 +1,14 @@
+quotes_example:
+  id: 1
+  trip_type_id: 1
+  age: <%= rand(18..75) %>
+  start_date: <%= Time.now.strftime('%Y-%m-%d') %>
+  end_date: <%= (Time.now + 30.days).strftime('%Y-%m-%d') %>a
+  excess_id: 2
+  cover_id: 3
+  cruise: true
+  snow: true
+  snow_start_date: <%= (Time.now + 2.days).strftime('%Y-%m-%d') %>
+  snow_end_date: <%= (Time.now + 9.days).strftime('%Y-%m-%d') %>
+  created_at: <%= Time.now.strftime('%Y-%m-%d') %>
+  updated_at: <%= Time.now.strftime('%Y-%m-%d') %>

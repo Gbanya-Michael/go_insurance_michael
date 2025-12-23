@@ -1,0 +1,6 @@
+premiums_base:
+  label: "Base Premium"
+  premium_type: "base"
+  multiplier: 1.92413120908991
+  created_at: <%= Time.now.strftime('%Y-%m-%d') %>
+  updated_at: <%= Time.now.strftime('%Y-%m-%d') %>
