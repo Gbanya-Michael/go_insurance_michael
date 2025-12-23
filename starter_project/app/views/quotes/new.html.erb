@@ -1,0 +1,352 @@
+<%# 
+  Quote Form Page
+  Collects travel details from users to generate insurance quotes
+  Includes validation for travellers, dates, destinations, trip type, and excess
+%>
+
+<div class="max-w-4xl mx-auto px-4 py-8">
+  <h1 class="text-3xl font-bold mb-6 text-gray-800">Travel Insurance Quote</h1>
+
+  <%= form_with model: @quote, url: quotes_path, local: true, data: { turbo: false }, class: "quote-form bg-white rounded-lg p-5 space-y-4", id: "quote-form", onsubmit: "return QuoteForm.validateDestinations()" do |form| %>
+    <%# Display validation errors if any %>
+    <% if @quote.errors.any? %>
+      <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <h2 class="font-bold mb-2"><%= pluralize(@quote.errors.count, "error") %> prohibited this quote from being saved:</h2>
+        <ul class="list-disc list-inside">
+          <% @quote.errors.full_messages.each do |message| %>
+            <li><%= message %></li>
+          <% end %>
+        </ul>
+      </div>
+    <% end %>
+
+    <%# Travellers section - supports multiple travellers with dynamic add/remove %>
+    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">Travellers</h2>
+      <div id="travellers-container" class="travellers-container flex flex-wrap gap-3">
+        <div class="traveller-field flex items-center bg-white p-3 rounded-md gap-3">
+          <input type="number" 
+                 name="quote[travellers][][age]" 
+                 placeholder="Age" 
+                 min="1" 
+                 max="84" 
+                 required
+                 class="w-32 px-3 py-2 rounded-md focus-ring-custom border-0 shrink-0">
+          <button type="button" onclick="QuoteForm.removeTraveller(this)" class="btn-remove-traveller text-red-600 hover:text-red-800 hidden shrink-0 whitespace-nowrap">
+            Remove
+          </button>
+        </div>
+      </div>
+      <button type="button" onclick="QuoteForm.addTraveller()" class="mt-3 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">
+        + Add Traveller
+      </button>
+      <p class="text-xs text-gray-600 mt-2">Note: Children under 16 must travel with an adult (21+)</p>
+    </div>
+
+    <%# Trip dates section - validates booking window and duration %>
+    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">Trip Dates</h2>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div>
+          <%= form.label :start_date, "Start Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%= form.date_field :start_date, 
+              required: true,
+              min: Date.today,
+              max: Date.today + 18.months,
+              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus-ring-custom",
+              id: "quote_start_date" %>
+        </div>
+        <div>
+          <%= form.label :end_date, "End Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+          <%= form.date_field :end_date, 
+              required: true,
+              class: "w-full px-3 py-2 border border-gray-300 rounded-md focus-ring-custom",
+              id: "quote_end_date" %>
+        </div>
+      </div>
+      <p class="text-xs text-gray-600 mt-2">Trip can be booked up to 18 months in advance. Maximum trip duration is 2 years.</p>
+    </div>
+
+    <%# Destinations section - multiple selection with zone-based pricing %>
+    <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+      <h2 class="text-lg font-semibold mb-3 text-gray-700">Destinations</h2>
+      <div>
+        <%= form.label :destination_id, "Select Destinations", class: "block text-sm font-medium text-gray-700 mb-2" %>
+        <select id="destination-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus-ring-custom bg-white">
+          <option value="">Choose a destination...</option>
+          <% @destinations.each do |destination| %>
+            <option value="<%= destination.id %>" data-label="<%= destination.label %>" data-zone="<%= destination.zone %>">
+              <%= destination.label %> (Zone <%= destination.zone %>)
+            </option>
+          <% end %>
+        </select>
+        <div id="selected-destinations" class="mt-3 flex flex-wrap gap-3"></div>
+      </div>
+      <p class="text-xs text-gray-600 mt-2">Select all destinations you'll be visiting. The highest zone will be used for pricing.</p>
+    </div>
+
+    <%# Trip type and excess selection %>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Trip Type</h2>
+        <div class="space-y-1.5">
+          <% @trip_types.each do |trip_type| %>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <%= form.radio_button :trip_type_id, trip_type.id, 
+                  { required: true, class: "w-4 h-4 border-gray-300" } %>
+              <span class="text-gray-700"><%= trip_type.label %></span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+
+      <div class="bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <h2 class="text-lg font-semibold mb-3 text-gray-700">Excess</h2>
+        <div class="space-y-1.5">
+          <% @excesses.each do |excess| %>
+            <label class="flex items-center space-x-2 cursor-pointer">
+              <%= form.radio_button :excess_id, excess.id, 
+                  { required: true, class: "w-4 h-4 border-gray-300" } %>
+              <span class="text-gray-700"><%= excess.label %></span>
+            </label>
+          <% end %>
+        </div>
+      </div>
+    </div>
+
+    <%# Submit button %>
+    <div class="flex justify-end pt-2">
+      <button type="submit" class="btn-submit text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors">
+        Get Quote
+      </button>
+    </div>
+  <% end %>
+</div>
+
+<%# Custom styles for form elements %>
+<style>
+  .focus-ring-custom:focus {
+    outline: 2px solid #01A0C4;
+    outline-offset: 2px;
+  }
+
+  input[type="checkbox"]:checked,
+  input[type="radio"]:checked {
+    accent-color: #01A0C4;
+  }
+
+  .quote-form {
+    border: 2px solid #01A0C4;
+  }
+
+  .travellers-container {
+    gap: 0.75rem;
+  }
+
+  .traveller-field {
+    flex: 0 0 auto;
+    border: 1px solid #01A0C4;
+  }
+
+  .btn-remove-traveller {
+    padding: 0.25rem 0.75rem 0.25rem 0.5rem;
+  }
+
+  .btn-submit {
+    background-color: #01A0C4;
+    padding: 0.625rem 1.25rem;
+  }
+
+  .btn-submit:hover {
+    background-color: #0188a3;
+  }
+
+  .destination-tag {
+    background-color: #01A0C4;
+    border-radius: 9999px;
+  }
+</style>
+
+<script>
+  <%# 
+    Quote Form JavaScript Module
+    Handles dynamic form interactions:
+    - Adding/removing traveller fields
+    - Destination selection and display
+    - Date validation (max 2 years duration)
+    - Form submission validation
+  %>
+  (function() {
+    'use strict';
+
+    const QuoteForm = {
+      selectedDestinations: [],
+
+      <%# Initialize all form functionality %>
+      init: function() {
+        this.setupDateValidation();
+        this.setupDestinationSelect();
+        this.updateRemoveButtons();
+      },
+
+      <%# Add a new traveller input field %>
+      addTraveller: function() {
+        const container = document.getElementById('travellers-container');
+        const field = document.createElement('div');
+        field.className = 'traveller-field flex items-center bg-white p-3 rounded-md gap-3';
+        field.innerHTML = `
+          <input type="number" 
+                 name="quote[travellers][][age]" 
+                 placeholder="Age" 
+                 min="1" 
+                 max="84" 
+                 required
+                 class="w-32 px-3 py-2 rounded-md focus-ring-custom border-0 flex-shrink-0">
+          <button type="button" 
+                  onclick="QuoteForm.removeTraveller(this)" 
+                  class="btn-remove-traveller text-red-600 hover:text-red-800 shrink-0 whitespace-nowrap">
+            Remove
+          </button>
+        `;
+        container.appendChild(field);
+        this.updateRemoveButtons();
+      },
+
+      <%# Remove a traveller field (hide remove button if only one remains) %>
+      removeTraveller: function(button) {
+        const field = button.closest('.traveller-field');
+        if (field) {
+          field.remove();
+          this.updateRemoveButtons();
+        }
+      },
+
+      <%# Show/hide remove buttons based on number of traveller fields %>
+      updateRemoveButtons: function() {
+        const fields = document.querySelectorAll('.traveller-field');
+        fields.forEach(field => {
+          const removeButton = field.querySelector('.btn-remove-traveller');
+          if (removeButton) {
+            removeButton.classList.toggle('hidden', fields.length === 1);
+          }
+        });
+      },
+
+      <%# Validate that at least one destination is selected before form submission %>
+      validateDestinations: function() {
+        if (this.selectedDestinations.length === 0) {
+          alert('Please select at least one destination.');
+          return false;
+        }
+        return true;
+      },
+
+      <%# Add a destination to the selected list %>
+      addDestination: function(destinationId, label, zone) {
+        const exists = this.selectedDestinations.some(d => d.id === destinationId);
+        if (!exists) {
+          this.selectedDestinations.push({ id: destinationId, label: label, zone: zone });
+          this.updateDestinationDisplay();
+          this.updateDestinationInput();
+        }
+        const select = document.getElementById('destination-select');
+        if (select) select.value = '';
+      },
+
+      <%# Remove a destination from the selected list %>
+      removeDestination: function(destinationId) {
+        this.selectedDestinations = this.selectedDestinations.filter(d => d.id !== destinationId);
+        this.updateDestinationDisplay();
+        this.updateDestinationInput();
+      },
+
+      <%# Update the visual display of selected destinations as tags %>
+      updateDestinationDisplay: function() {
+        const container = document.getElementById('selected-destinations');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        this.selectedDestinations.forEach(dest => {
+          const tag = document.createElement('div');
+          tag.className = 'destination-tag inline-flex items-center px-3 py-1.5 text-sm text-white';
+          tag.innerHTML = `
+            <span>${this.escapeHtml(dest.label)} (Zone ${dest.zone})</span>
+            <button type="button" 
+                    onclick="QuoteForm.removeDestination('${dest.id}')" 
+                    class="ml-2 hover:text-gray-200 font-bold cursor-pointer bg-transparent border-0 text-white">
+              ×
+            </button>
+          `;
+          container.appendChild(tag);
+        });
+      },
+
+      <%# Create hidden form inputs for selected destinations %>
+      updateDestinationInput: function() {
+        const existingInputs = document.querySelectorAll('input[name="quote[destination_ids][]"]');
+        existingInputs.forEach(input => input.remove());
+
+        const parent = document.getElementById('selected-destinations');
+        if (!parent) return;
+
+        this.selectedDestinations.forEach(dest => {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = 'quote[destination_ids][]';
+          input.value = dest.id;
+          parent.parentNode.appendChild(input);
+        });
+      },
+
+      <%# Set up date validation - end date must be within 2 years of start date %>
+      setupDateValidation: function() {
+        const startDateField = document.getElementById('quote_start_date');
+        const endDateField = document.getElementById('quote_end_date');
+
+        if (startDateField && endDateField) {
+          startDateField.addEventListener('change', function() {
+            const startDate = new Date(this.value);
+            if (!isNaN(startDate.getTime())) {
+              const maxDate = new Date(startDate);
+              maxDate.setFullYear(maxDate.getFullYear() + 2);
+              endDateField.min = this.value;
+              endDateField.max = maxDate.toISOString().split('T')[0];
+            }
+          });
+        }
+      },
+
+      <%# Set up destination dropdown to add selections to the list %>
+      setupDestinationSelect: function() {
+        const select = document.getElementById('destination-select');
+        if (select) {
+          select.addEventListener('change', function() {
+            if (this.value) {
+              const option = this.options[this.selectedIndex];
+              const label = option.getAttribute('data-label');
+              const zone = option.getAttribute('data-zone');
+              if (label && zone) {
+                QuoteForm.addDestination(this.value, label, zone);
+              }
+            }
+          });
+        }
+      },
+
+      <%# Escape HTML to prevent XSS attacks %>
+      escapeHtml: function(text) {
+        const div = document.createElement('div');
+        div.textContent = text;
+        return div.innerHTML;
+      }
+    };
+
+    window.QuoteForm = QuoteForm;
+
+    document.addEventListener('DOMContentLoaded', function() {
+      QuoteForm.init();
+    });
+  })();
+</script>
+

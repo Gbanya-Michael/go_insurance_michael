@@ -1,0 +1,23 @@
+excesses_one_hundred:
+  id: 1
+  label: "$100"
+  value: 100
+  multiplier: 1.1
+  created_at: <%= Time.now.strftime('%Y-%m-%d') %>
+  updated_at: <%= Time.now.strftime('%Y-%m-%d') %>
+
+excesses_two_hundred:
+  id: 2
+  label: "$200"
+  value: 200
+  multiplier: 1
+  created_at: <%= Time.now.strftime('%Y-%m-%d') %>
+  updated_at: <%= Time.now.strftime('%Y-%m-%d') %>
+
+excesses_three_hundred:
+  id: 3
+  label: "$300"
+  value: 300
+  multiplier: 0.85
+  created_at: <%= Time.now.strftime('%Y-%m-%d') %>
+  updated_at: <%= Time.now.strftime('%Y-%m-%d') %>

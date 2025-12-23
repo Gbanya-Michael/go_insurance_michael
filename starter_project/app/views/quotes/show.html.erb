@@ -1,0 +1,268 @@
+<%# 
+  Quote Display Page
+  Shows calculated premiums for three coverage levels (Basic, Plus, Elite)
+  Allows users to select add-ons (Cruise, Snow/Ski) and see real-time price updates
+%>
+
+<div class="max-w-6xl mx-auto px-4 py-6 md:py-10 mt-6 md:mt-8 mb-6 md:mb-8">
+  <div class="mb-6 md:mb-8">
+    <h1 class="text-2xl md:text-3xl font-bold mb-3 text-gray-800">Your Travel Insurance Quote</h1>
+    <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-md border border-gray-200">
+      <span class="text-xs md:text-sm text-gray-600 font-medium">Quote no.</span>
+      <span class="text-sm md:text-base text-[#01A0C4] font-bold">go<%= @quote.id %></span>
+    </div>
+  </div>
+
+  <%# Trip summary section - displays all quote details %>
+  <div class="bg-gray-50 p-4 md:p-6 rounded-lg border border-gray-200 mb-4 md:mb-6">
+    <h2 class="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-700">Trip Details</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 text-xs md:text-sm">
+      <div>
+        <span class="font-medium">Travellers:</span>
+        <% if @quote.travellers.present? && @quote.travellers.is_a?(Array) && @quote.travellers.any? %>
+          <ul class="mt-1">
+            <% @quote.travellers.each do |traveller| %>
+              <li><%= traveller['age'] || traveller[:age] %> years</li>
+            <% end %>
+          </ul>
+        <% else %>
+          <%= @quote.age %> years
+        <% end %>
+      </div>
+      <div><span class="font-medium">Trip Dates:</span> <%= @quote.start_date.strftime("%B %d, %Y") %> - <%= @quote.end_date.strftime("%B %d, %Y") %></div>
+      <div><span class="font-medium">Duration:</span> <%= @calculator.trip_duration_days %> days</div>
+      <div><span class="font-medium">Trip Type:</span> <%= @quote.trip_type.label %></div>
+      <div><span class="font-medium">Excess:</span> <%= @quote.excess.label %></div>
+      <div><span class="font-medium">Destinations:</span> <%= @quote.destinations.pluck(:label).join(", ") %></div>
+    </div>
+  </div>
+
+  <%# Form for updating quote with add-ons and coverage selection %>
+  <%= form_with model: @quote, url: quote_path(@quote), method: :patch, local: true, data: { turbo: false }, id: "quote-form" do |form| %>
+    <%# Optional add-ons section - Cruise and Snow/Ski coverage %>
+    <div class="bg-gray-50 p-4 md:p-6 rounded-lg border border-gray-200 mb-4 md:mb-6">
+      <h2 class="text-base md:text-lg font-semibold mb-3 md:mb-4 text-gray-700">Additional Coverage</h2>
+      
+      <div class="mb-3 md:mb-4 p-4 md:p-5 bg-white border border-gray-200 rounded-md">
+        <label class="flex items-center space-x-2 md:space-x-3 cursor-pointer">
+          <%= form.check_box :cruise, { id: "quote_cruise", class: "checkbox-primary", onchange: "QuoteDisplay.updatePremiums()" } %>
+          <div class="flex-1">
+            <span class="font-medium text-sm md:text-base text-gray-700">Cruise Coverage</span>
+            <p class="text-xs md:text-sm text-gray-600">
+              Additional <%= number_to_currency(@highest_zone_destination&.cruise_add_on_amount || 0) %> per traveller
+            </p>
+          </div>
+        </label>
+      </div>
+
+      <div class="mb-3 md:mb-4 p-4 md:p-5 bg-white border border-gray-200 rounded-md">
+        <label class="flex items-center space-x-2 md:space-x-3 cursor-pointer">
+          <%= form.check_box :snow, { id: "quote_snow", class: "checkbox-primary snow-checkbox", onclick: "QuoteDisplay.toggleSnowDates()" } %>
+          <div class="flex-1">
+            <span class="font-medium text-sm md:text-base text-gray-700">Snow/Ski Coverage</span>
+            <p class="text-xs md:text-sm text-gray-600">
+              <%= number_to_currency(@highest_zone_destination&.ski_per_day_amount || 0) %> per day per traveller
+            </p>
+          </div>
+        </label>
+        <div id="snow-dates" class="mt-2 md:mt-3 hidden">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+            <div>
+              <%= form.label :snow_start_date, "Ski Start Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+              <%= form.date_field :snow_start_date, { id: "snow_start_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus-ring-custom", onchange: "QuoteDisplay.updatePremiums()" } %>
+            </div>
+            <div>
+              <%= form.label :snow_end_date, "Ski End Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
+              <%= form.date_field :snow_end_date, { id: "snow_end_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus-ring-custom", onchange: "QuoteDisplay.updatePremiums()" } %>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <%# Premium cards for each coverage level (Basic, Plus, Elite) %>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 mb-4 md:mb-6">
+      <% @covers.each do |cover| %>
+        <% premium_data = @premiums[cover.id] || {} %>
+        <div class="premium-card bg-white p-4 md:p-6 rounded-lg border border-gray-200 hover:border-primary transition-colors">
+          <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 text-gray-800"><%= cover.label %></h3>
+          <div class="mb-4 md:mb-5">
+            <div class="text-xs md:text-sm text-gray-600 mb-2">Base Premium:</div>
+            <div class="text-base md:text-lg font-semibold text-gray-700" id="base-<%= cover.id %>">
+              <%= number_to_currency(premium_data[:base_premium] || 0) %>
+            </div>
+          </div>
+          <div class="mb-4 md:mb-5 space-y-2">
+            <div class="text-xs md:text-sm text-gray-600">
+              <span id="cruise-label-<%= cover.id %>" class="hidden">Cruise Add-on: </span>
+              <span id="cruise-amount-<%= cover.id %>" class="hidden font-semibold"></span>
+            </div>
+            <div class="text-xs md:text-sm text-gray-600">
+              <span id="snow-label-<%= cover.id %>" class="hidden">Snow Add-on: </span>
+              <span id="snow-amount-<%= cover.id %>" class="hidden font-semibold"></span>
+            </div>
+          </div>
+          <div class="pt-4 md:pt-5 border-t border-gray-200">
+            <div class="text-xs md:text-sm text-gray-600 mb-2">Final Premium:</div>
+            <div class="text-xl md:text-2xl font-bold text-primary" id="final-<%= cover.id %>">
+              <%= number_to_currency(premium_data[:final_premium] || 0) %>
+            </div>
+          </div>
+          <div class="mt-4 md:mt-5 flex items-center">
+            <%= form.radio_button :cover_id, cover.id, { class: "radio-primary", onchange: "QuoteDisplay.updatePremiums()" } %>
+            <label class="ml-2 text-xs md:text-sm text-gray-700">Select this cover</label>
+          </div>
+        </div>
+      <% end %>
+    </div>
+
+    <div class="flex justify-end">
+      <%= form.submit "Update Quote", class: "btn-submit w-full md:w-auto text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2" %>
+    </div>
+  <% end %>
+</div>
+
+<style>
+  .checkbox-primary, .radio-primary {
+    accent-color: #01A0C4;
+  }
+
+  .premium-card:hover {
+    border-color: #01A0C4;
+  }
+
+  .text-primary {
+    color: #01A0C4;
+  }
+
+  .btn-submit {
+    background-color: #01A0C4;
+    padding: 0.625rem 1.25rem;
+  }
+
+  .btn-submit:hover {
+    background-color: #0188a3;
+  }
+</style>
+
+<script>
+  <%# 
+    Quote Display JavaScript Module
+    Handles real-time premium updates when add-ons are toggled
+    Manages snow/ski date visibility and calculations
+  %>
+  (function() {
+    'use strict';
+
+    <%# Configuration data from server %>
+    const CONFIG = {
+      premiumData: <%= raw @premiums.to_json %>,
+      cruiseAddOn: <%= @highest_zone_destination&.cruise_add_on_amount || 0 %>,
+      skiPerDay: <%= @highest_zone_destination&.ski_per_day_amount || 0 %>,
+      travellerCount: <%= (@quote.travellers.present? && @quote.travellers.is_a?(Array) ? @quote.travellers.length : 1) %>,
+      coverIds: <%= raw @covers.pluck(:id).to_json %>
+    };
+
+    const QuoteDisplay = {
+      <%# Toggle visibility of snow/ski date fields %>
+      toggleSnowDates: function() {
+        const checkbox = document.getElementById('quote_snow');
+        const datesContainer = document.getElementById('snow-dates');
+        if (!checkbox || !datesContainer) return;
+
+        if (checkbox.checked) {
+          datesContainer.classList.remove('hidden');
+          this.updatePremiums();
+        } else {
+          datesContainer.classList.add('hidden');
+          document.getElementById('snow_start_date').value = '';
+          document.getElementById('snow_end_date').value = '';
+          this.updatePremiums();
+        }
+      },
+
+      <%# Calculate number of ski days from date range %>
+      calculateSnowDays: function() {
+        const start = document.getElementById('snow_start_date')?.value;
+        const end = document.getElementById('snow_end_date')?.value;
+        if (!start || !end) return 0;
+
+        const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
+        return days > 0 ? days : 0;
+      },
+
+      <%# Update all premium displays based on selected add-ons %>
+      updatePremiums: function() {
+        const cruiseChecked = document.getElementById('quote_cruise')?.checked || false;
+        const snowChecked = document.getElementById('quote_snow')?.checked || false;
+        const snowDays = this.calculateSnowDays();
+
+        const cruiseAmount = cruiseChecked ? CONFIG.cruiseAddOn * CONFIG.travellerCount : 0;
+        const snowAmount = (snowChecked && snowDays > 0) ? CONFIG.skiPerDay * snowDays * CONFIG.travellerCount : 0;
+
+        CONFIG.coverIds.forEach(coverId => {
+          this.updateCoverPremium(coverId, cruiseChecked, snowChecked, cruiseAmount, snowAmount);
+        });
+      },
+
+      <%# Update premium display for a single coverage level %>
+      updateCoverPremium: function(coverId, cruiseChecked, snowChecked, cruiseAmount, snowAmount) {
+        const base = CONFIG.premiumData[coverId]?.base_premium || 0;
+        const final = base + cruiseAmount + snowAmount;
+
+        this.updateElement(`base-${coverId}`, this.formatCurrency(base));
+        this.toggleAddOn(`cruise-`, coverId, cruiseChecked, cruiseAmount);
+        this.toggleAddOn(`snow-`, coverId, snowChecked && snowAmount > 0, snowAmount);
+        this.updateElement(`final-${coverId}`, this.formatCurrency(final));
+      },
+
+      <%# Show/hide add-on display and update amount %>
+      toggleAddOn: function(prefix, coverId, show, amount) {
+        const label = document.getElementById(`${prefix}label-${coverId}`);
+        const amountEl = document.getElementById(`${prefix}amount-${coverId}`);
+        
+        if (show) {
+          label?.classList.remove('hidden');
+          if (amountEl) {
+            amountEl.classList.remove('hidden');
+            amountEl.textContent = this.formatCurrency(amount);
+          }
+        } else {
+          label?.classList.add('hidden');
+          amountEl?.classList.add('hidden');
+        }
+      },
+
+      <%# Update text content of an element %>
+      updateElement: function(id, text) {
+        const el = document.getElementById(id);
+        if (el) el.textContent = text;
+      },
+
+      <%# Format number as currency %>
+      formatCurrency: function(amount) {
+        return new Intl.NumberFormat('en-US', {
+          style: 'currency',
+          currency: 'USD',
+          minimumFractionDigits: 2
+        }).format(amount);
+      },
+
+      <%# Initialize on page load %>
+      init: function() {
+        const snowCheckbox = document.getElementById('quote_snow');
+        if (snowCheckbox) {
+          snowCheckbox.addEventListener('change', () => this.toggleSnowDates());
+          if (snowCheckbox.checked) {
+            document.getElementById('snow-dates')?.classList.remove('hidden');
+          }
+        }
+        setTimeout(() => this.updatePremiums(), 100);
+      }
+    };
+
+    window.QuoteDisplay = QuoteDisplay;
+    document.addEventListener('DOMContentLoaded', () => QuoteDisplay.init());
+  })();
+</script>
+
