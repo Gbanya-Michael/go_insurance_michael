@@ -207,8 +207,12 @@
 
       <%# Update premium display for a single coverage level %>
       updateCoverPremium: function(coverId, cruiseChecked, snowChecked, cruiseAmount, snowAmount) {
-        const base = CONFIG.premiumData[coverId]?.base_premium || 0;
-        const final = base + cruiseAmount + snowAmount;
+        <%# Ensure we access premium data with both string and number keys %>
+        const premiumData = CONFIG.premiumData[coverId] || CONFIG.premiumData[String(coverId)] || CONFIG.premiumData[Number(coverId)] || {};
+        <%# Ensure base_premium is a number %>
+        const base = parseFloat(premiumData.base_premium) || 0;
+        <%# Calculate final premium by adding base + add-ons %>
+        const final = base + parseFloat(cruiseAmount) + parseFloat(snowAmount);
 
         this.updateElement(`base-${coverId}`, this.formatCurrency(base));
         this.toggleAddOn(`cruise-`, coverId, cruiseChecked, cruiseAmount);
