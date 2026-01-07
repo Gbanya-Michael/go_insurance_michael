@@ -72,6 +72,17 @@ RSpec.configure do |config|
   config.filter_rails_from_backtrace!
   # arbitrary gems may also be filtered via:
   # config.filter_gems_from_backtrace("gem name")
+
+  # Compile Tailwind CSS before running tests
+  # This ensures the compiled CSS file exists in app/assets/builds/tailwind.css
+  # which is required by the layout but is gitignored
+  config.before(:suite) do
+    tailwind_css_path = Rails.root.join('app/assets/builds/tailwind.css')
+    unless tailwind_css_path.exist?
+      puts "Compiling Tailwind CSS for tests..."
+      system('bin/rails tailwindcss:build', exception: false)
+    end
+  end
 end
 
 # Shoulda Matchers configuration
