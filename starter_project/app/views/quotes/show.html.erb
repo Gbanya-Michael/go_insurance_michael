@@ -4,7 +4,15 @@
   Allows users to select add-ons (Cruise, Snow/Ski) and see real-time price updates
 %>
 
-<div class="max-w-6xl mx-auto px-4 py-6 md:py-10 mt-6 md:mt-8 mb-6 md:mb-8">
+<%# Pass server-side configuration to JavaScript via data attributes %>
+<div class="max-w-6xl mx-auto px-4 py-6 md:py-10 mt-6 md:mt-8 mb-6 md:mb-8"
+     data-quote-display-config='<%= {
+       premium_data: @premiums,
+       cruise_add_on: @highest_zone_destination&.cruise_add_on_amount || 0,
+       ski_per_day: @highest_zone_destination&.ski_per_day_amount || 0,
+       traveller_count: (@quote.travellers.present? && @quote.travellers.is_a?(Array) ? @quote.travellers.length : 1),
+       cover_ids: @covers.pluck(:id)
+     }.to_json.html_safe %>'>
   <div class="mb-6 md:mb-8">
     <h1 class="text-2xl md:text-3xl font-bold mb-3 text-gray-800">Your Travel Insurance Quote</h1>
     <div class="inline-flex items-center gap-2 px-3 py-1.5 bg-gray-100 rounded-md border border-gray-200">
@@ -45,7 +53,7 @@
       
       <div class="mb-3 md:mb-4 p-4 md:p-5 bg-white border border-gray-200 rounded-md">
         <label class="flex items-center space-x-2 md:space-x-3 cursor-pointer">
-          <%= form.check_box :cruise, { id: "quote_cruise", class: "accent-primary", onchange: "QuoteDisplay.updatePremiums()" } %>
+          <%= form.check_box :cruise, { id: "quote_cruise", class: "accent-primary" } %>
           <div class="flex-1">
             <span class="font-medium text-sm md:text-base text-gray-700">Cruise Coverage</span>
             <p class="text-xs md:text-sm text-gray-600">
@@ -57,7 +65,7 @@
 
       <div class="mb-3 md:mb-4 p-4 md:p-5 bg-white border border-gray-200 rounded-md">
         <label class="flex items-center space-x-2 md:space-x-3 cursor-pointer">
-          <%= form.check_box :snow, { id: "quote_snow", class: "accent-primary snow-checkbox", onclick: "QuoteDisplay.toggleSnowDates()" } %>
+          <%= form.check_box :snow, { id: "quote_snow", class: "accent-primary snow-checkbox" } %>
           <div class="flex-1">
             <span class="font-medium text-sm md:text-base text-gray-700">Snow/Ski Coverage</span>
             <p class="text-xs md:text-sm text-gray-600">
@@ -69,11 +77,11 @@
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
             <div>
               <%= form.label :snow_start_date, "Ski Start Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
-              <%= form.date_field :snow_start_date, { id: "snow_start_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-2 focus:outline-primary focus:outline-offset-2", onchange: "QuoteDisplay.updatePremiums()" } %>
+              <%= form.date_field :snow_start_date, { id: "snow_start_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-2 focus:outline-primary focus:outline-offset-2" } %>
             </div>
             <div>
               <%= form.label :snow_end_date, "Ski End Date", class: "block text-sm font-medium text-gray-700 mb-2" %>
-              <%= form.date_field :snow_end_date, { id: "snow_end_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-2 focus:outline-primary focus:outline-offset-2", onchange: "QuoteDisplay.updatePremiums()" } %>
+              <%= form.date_field :snow_end_date, { id: "snow_end_date", min: @quote.start_date.to_s, max: @quote.end_date.to_s, class: "w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-2 focus:outline-primary focus:outline-offset-2" } %>
             </div>
           </div>
         </div>
@@ -109,7 +117,7 @@
             </div>
           </div>
           <div class="mt-4 md:mt-5 flex items-center">
-            <%= form.radio_button :cover_id, cover.id, { class: "accent-primary", onchange: "QuoteDisplay.updatePremiums()" } %>
+            <%= form.radio_button :cover_id, cover.id, { class: "accent-primary" } %>
             <label class="ml-2 text-xs md:text-sm text-gray-700">Select this cover</label>
           </div>
         </div>
@@ -117,134 +125,11 @@
     </div>
 
     <div class="flex justify-end">
-      <%= form.submit "Update Quote", class: "w-full md:w-auto px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors" %>
+      <%= form.button type: "submit", class: "w-full md:w-auto px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors" do %>
+        Update Quote
+      <% end %>
     </div>
   <% end %>
 </div>
 
-
-<script>
-  <%# 
-    Quote Display JavaScript Module
-    Handles real-time premium updates when add-ons are toggled
-    Manages snow/ski date visibility and calculations
-  %>
-  (function() {
-    'use strict';
-
-    <%# Configuration data from server %>
-    const CONFIG = {
-      premiumData: <%= raw @premiums.to_json %>,
-      cruiseAddOn: <%= @highest_zone_destination&.cruise_add_on_amount || 0 %>,
-      skiPerDay: <%= @highest_zone_destination&.ski_per_day_amount || 0 %>,
-      travellerCount: <%= (@quote.travellers.present? && @quote.travellers.is_a?(Array) ? @quote.travellers.length : 1) %>,
-      coverIds: <%= raw @covers.pluck(:id).to_json %>
-    };
-
-    const QuoteDisplay = {
-      <%# Toggle visibility of snow/ski date fields %>
-      toggleSnowDates: function() {
-        const checkbox = document.getElementById('quote_snow');
-        const datesContainer = document.getElementById('snow-dates');
-        if (!checkbox || !datesContainer) return;
-
-        if (checkbox.checked) {
-          datesContainer.classList.remove('hidden');
-          this.updatePremiums();
-        } else {
-          datesContainer.classList.add('hidden');
-          document.getElementById('snow_start_date').value = '';
-          document.getElementById('snow_end_date').value = '';
-          this.updatePremiums();
-        }
-      },
-
-      <%# Calculate number of ski days from date range %>
-      calculateSnowDays: function() {
-        const start = document.getElementById('snow_start_date')?.value;
-        const end = document.getElementById('snow_end_date')?.value;
-        if (!start || !end) return 0;
-
-        const days = Math.ceil((new Date(end) - new Date(start)) / (1000 * 60 * 60 * 24)) + 1;
-        return days > 0 ? days : 0;
-      },
-
-      <%# Update all premium displays based on selected add-ons %>
-      updatePremiums: function() {
-        const cruiseChecked = document.getElementById('quote_cruise')?.checked || false;
-        const snowChecked = document.getElementById('quote_snow')?.checked || false;
-        const snowDays = this.calculateSnowDays();
-
-        const cruiseAmount = cruiseChecked ? CONFIG.cruiseAddOn * CONFIG.travellerCount : 0;
-        const snowAmount = (snowChecked && snowDays > 0) ? CONFIG.skiPerDay * snowDays * CONFIG.travellerCount : 0;
-
-        CONFIG.coverIds.forEach(coverId => {
-          this.updateCoverPremium(coverId, cruiseChecked, snowChecked, cruiseAmount, snowAmount);
-        });
-      },
-
-      <%# Update premium display for a single coverage level %>
-      updateCoverPremium: function(coverId, cruiseChecked, snowChecked, cruiseAmount, snowAmount) {
-        <%# Ensure we access premium data with both string and number keys %>
-        const premiumData = CONFIG.premiumData[coverId] || CONFIG.premiumData[String(coverId)] || CONFIG.premiumData[Number(coverId)] || {};
-        <%# Ensure base_premium is a number %>
-        const base = parseFloat(premiumData.base_premium) || 0;
-        <%# Calculate final premium by adding base + add-ons %>
-        const final = base + parseFloat(cruiseAmount) + parseFloat(snowAmount);
-
-        this.updateElement(`base-${coverId}`, this.formatCurrency(base));
-        this.toggleAddOn(`cruise-`, coverId, cruiseChecked, cruiseAmount);
-        this.toggleAddOn(`snow-`, coverId, snowChecked && snowAmount > 0, snowAmount);
-        this.updateElement(`final-${coverId}`, this.formatCurrency(final));
-      },
-
-      <%# Show/hide add-on display and update amount %>
-      toggleAddOn: function(prefix, coverId, show, amount) {
-        const label = document.getElementById(`${prefix}label-${coverId}`);
-        const amountEl = document.getElementById(`${prefix}amount-${coverId}`);
-        
-        if (show) {
-          label?.classList.remove('hidden');
-          if (amountEl) {
-            amountEl.classList.remove('hidden');
-            amountEl.textContent = this.formatCurrency(amount);
-          }
-        } else {
-          label?.classList.add('hidden');
-          amountEl?.classList.add('hidden');
-        }
-      },
-
-      <%# Update text content of an element %>
-      updateElement: function(id, text) {
-        const el = document.getElementById(id);
-        if (el) el.textContent = text;
-      },
-
-      <%# Format number as currency %>
-      formatCurrency: function(amount) {
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: 2
-        }).format(amount);
-      },
-
-      <%# Initialize on page load %>
-      init: function() {
-        const snowCheckbox = document.getElementById('quote_snow');
-        if (snowCheckbox) {
-          snowCheckbox.addEventListener('change', () => this.toggleSnowDates());
-          if (snowCheckbox.checked) {
-            document.getElementById('snow-dates')?.classList.remove('hidden');
-          }
-        }
-        setTimeout(() => this.updatePremiums(), 100);
-      }
-    };
-
-    window.QuoteDisplay = QuoteDisplay;
-    document.addEventListener('DOMContentLoaded', () => QuoteDisplay.init());
-  })();
-</script>
 

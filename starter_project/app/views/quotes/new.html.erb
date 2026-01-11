@@ -10,7 +10,7 @@
 <div class="max-w-4xl mx-auto px-4 py-8">
   <h1 class="text-3xl font-bold mb-6 text-gray-800">Travel Insurance Quote</h1>
 
-  <%= form_with model: @quote, url: quotes_path, local: true, data: { turbo: false }, class: "bg-white rounded-lg p-5 space-y-4 border-2 border-primary", id: "quote-form", onsubmit: "return QuoteForm.validateDestinations()" do |form| %>
+  <%= form_with model: @quote, url: quotes_path, local: true, data: { turbo: false }, class: "bg-white rounded-lg p-5 space-y-4 border-2 border-primary", id: "quote-form" do |form| %>
     <%# Display validation errors if any %>
     <% if @quote.errors.any? %>
       <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
@@ -35,12 +35,12 @@
                  max="84" 
                  required
                  class="w-32 px-3 py-2 rounded-md border-0 shrink-0 focus:outline-2 focus:outline-primary focus:outline-offset-2">
-          <button type="button" onclick="QuoteForm.removeTraveller(this)" class="px-3 py-1 pl-2 text-red-600 hover:text-red-800 hidden shrink-0 whitespace-nowrap">
+          <button type="button" data-action="remove-traveller" class="px-3 py-1 pl-2 text-red-600 hover:text-red-800 hidden shrink-0 whitespace-nowrap">
             Remove
           </button>
         </div>
       </div>
-      <button type="button" onclick="QuoteForm.addTraveller()" class="mt-3 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">
+      <button type="button" data-action="add-traveller" class="mt-3 px-3 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300 text-sm">
         + Add Traveller
       </button>
       <p class="text-xs text-gray-600 mt-2">Note: Children under 16 must travel with an adult (21+)</p>
@@ -119,194 +119,11 @@
 
     <%# Submit button %>
     <div class="flex justify-end pt-2">
-      <button type="submit" class="px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors">
+      <%= form.button type: "submit", class: "px-5 py-2.5 bg-primary hover:bg-primary-dark text-white font-semibold rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors" do %>
         Get Quote
-      </button>
+      <% end %>
     </div>
   <% end %>
 </div>
 
-
-<script>
-  <%# 
-    Quote Form JavaScript Module
-    Handles dynamic form interactions:
-    - Adding/removing traveller fields
-    - Destination selection and display
-    - Date validation (max 2 years duration)
-    - Form submission validation
-  %>
-  (function() {
-    'use strict';
-
-    const QuoteForm = {
-      selectedDestinations: [],
-
-      <%# Initialize all form functionality %>
-      init: function() {
-        this.setupDateValidation();
-        this.setupDestinationSelect();
-        this.updateRemoveButtons();
-      },
-
-      <%# Add a new traveller input field %>
-      addTraveller: function() {
-        const container = document.getElementById('travellers-container');
-        const field = document.createElement('div');
-        field.className = 'flex items-center bg-white p-3 rounded-md gap-3 border border-primary shrink-0';
-        field.innerHTML = `
-          <input type="number" 
-                 name="quote[travellers][][age]" 
-                 placeholder="Age" 
-                 min="1" 
-                 max="84" 
-                 required
-                 class="w-32 px-3 py-2 rounded-md border-0 shrink-0 focus:outline-2 focus:outline-primary focus:outline-offset-2">
-          <button type="button" 
-                  onclick="QuoteForm.removeTraveller(this)" 
-                  class="px-3 py-1 pl-2 text-red-600 hover:text-red-800 shrink-0 whitespace-nowrap">
-            Remove
-          </button>
-        `;
-        container.appendChild(field);
-        this.updateRemoveButtons();
-      },
-
-      <%# Remove a traveller field (hide remove button if only one remains) %>
-      removeTraveller: function(button) {
-        const field = button.closest('#travellers-container > div');
-        if (field) {
-          field.remove();
-          this.updateRemoveButtons();
-        }
-      },
-
-      <%# Show/hide remove buttons based on number of traveller fields %>
-      updateRemoveButtons: function() {
-        const fields = document.querySelectorAll('#travellers-container > div');
-        fields.forEach(field => {
-          const removeButton = field.querySelector('button[onclick*="removeTraveller"]');
-          if (removeButton) {
-            removeButton.classList.toggle('hidden', fields.length === 1);
-          }
-        });
-      },
-
-      <%# Validate that at least one destination is selected before form submission %>
-      validateDestinations: function() {
-        if (this.selectedDestinations.length === 0) {
-          alert('Please select at least one destination.');
-          return false;
-        }
-        return true;
-      },
-
-      <%# Add a destination to the selected list %>
-      addDestination: function(destinationId, label, zone) {
-        const exists = this.selectedDestinations.some(d => d.id === destinationId);
-        if (!exists) {
-          this.selectedDestinations.push({ id: destinationId, label: label, zone: zone });
-          this.updateDestinationDisplay();
-          this.updateDestinationInput();
-        }
-        const select = document.getElementById('destination-select');
-        if (select) select.value = '';
-      },
-
-      <%# Remove a destination from the selected list %>
-      removeDestination: function(destinationId) {
-        this.selectedDestinations = this.selectedDestinations.filter(d => d.id !== destinationId);
-        this.updateDestinationDisplay();
-        this.updateDestinationInput();
-      },
-
-      <%# Update the visual display of selected destinations as tags %>
-      updateDestinationDisplay: function() {
-        const container = document.getElementById('selected-destinations');
-        if (!container) return;
-
-        container.innerHTML = '';
-
-        this.selectedDestinations.forEach(dest => {
-          const tag = document.createElement('div');
-          tag.className = 'bg-primary rounded-full inline-flex items-center px-3 py-1.5 text-sm text-white';
-          tag.innerHTML = `
-            <span class="text-white">${this.escapeHtml(dest.label)} (Zone ${dest.zone})</span>
-            <button type="button" 
-                    onclick="QuoteForm.removeDestination('${dest.id}')" 
-                    class="ml-2 hover:text-gray-200 font-bold cursor-pointer bg-transparent border-0 text-white text-lg leading-none">
-              ×
-            </button>
-          `;
-          container.appendChild(tag);
-        });
-      },
-
-      <%# Create hidden form inputs for selected destinations %>
-      updateDestinationInput: function() {
-        const existingInputs = document.querySelectorAll('input[name="quote[destination_ids][]"]');
-        existingInputs.forEach(input => input.remove());
-
-        const parent = document.getElementById('selected-destinations');
-        if (!parent) return;
-
-        this.selectedDestinations.forEach(dest => {
-          const input = document.createElement('input');
-          input.type = 'hidden';
-          input.name = 'quote[destination_ids][]';
-          input.value = dest.id;
-          parent.parentNode.appendChild(input);
-        });
-      },
-
-      <%# Set up date validation - end date must be within 2 years of start date %>
-      setupDateValidation: function() {
-        const startDateField = document.getElementById('quote_start_date');
-        const endDateField = document.getElementById('quote_end_date');
-
-        if (startDateField && endDateField) {
-          startDateField.addEventListener('change', function() {
-            const startDate = new Date(this.value);
-            if (!isNaN(startDate.getTime())) {
-              const maxDate = new Date(startDate);
-              maxDate.setFullYear(maxDate.getFullYear() + 2);
-              endDateField.min = this.value;
-              endDateField.max = maxDate.toISOString().split('T')[0];
-            }
-          });
-        }
-      },
-
-      <%# Set up destination dropdown to add selections to the list %>
-      setupDestinationSelect: function() {
-        const select = document.getElementById('destination-select');
-        if (select) {
-          select.addEventListener('change', function() {
-            if (this.value) {
-              const option = this.options[this.selectedIndex];
-              const label = option.getAttribute('data-label');
-              const zone = option.getAttribute('data-zone');
-              if (label && zone) {
-                QuoteForm.addDestination(this.value, label, zone);
-              }
-            }
-          });
-        }
-      },
-
-      <%# Escape HTML to prevent XSS attacks %>
-      escapeHtml: function(text) {
-        const div = document.createElement('div');
-        div.textContent = text;
-        return div.innerHTML;
-      }
-    };
-
-    window.QuoteForm = QuoteForm;
-
-    document.addEventListener('DOMContentLoaded', function() {
-      QuoteForm.init();
-    });
-  })();
-</script>
 
