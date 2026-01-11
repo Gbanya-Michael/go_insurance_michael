@@ -35,7 +35,7 @@ RSpec.describe QuotesController, type: :controller do
     let(:excess) { Excess.first || create(:excess) }
     let(:destination) { Destination.first || create(:destination) }
     let(:cover) { Cover.first || create(:cover) }
-    
+
     before do
       # Ensure a cover exists for the controller's default cover logic
       cover
@@ -45,10 +45,10 @@ RSpec.describe QuotesController, type: :controller do
       let(:valid_attributes) do
         {
           quote: {
-            travellers: [{ age: 30 }],
+            travellers: [ { age: 30 } ],
             start_date: (Date.today + 1.month).to_s,
             end_date: (Date.today + 1.month + 7.days).to_s,
-            destination_ids: [destination.id],
+            destination_ids: [ destination.id ],
             trip_type_id: trip_type.id,
             excess_id: excess.id
           }
@@ -97,10 +97,10 @@ RSpec.describe QuotesController, type: :controller do
       let(:invalid_attributes) do
         {
           quote: {
-            travellers: [{ age: 10 }],
+            travellers: [ { age: 10 } ],
             start_date: (Date.today + 1.month).to_s,
             end_date: (Date.today + 1.month + 7.days).to_s,
-            destination_ids: [destination.id],
+            destination_ids: [ destination.id ],
             trip_type_id: trip_type.id,
             excess_id: excess.id
           }
@@ -134,6 +134,3 @@ RSpec.describe QuotesController, type: :controller do
     end
   end
 end
-
-
-

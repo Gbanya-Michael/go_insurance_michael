@@ -54,6 +54,9 @@ group :development, :test do
 
   # Omakase Ruby styling [https://github.com/rails/rubocop-rails-omakase/]
   gem "rubocop-rails-omakase", require: false
+
+  # Git hooks manager for running RuboCop automatically [https://github.com/sds/overcommit]
+  gem "overcommit", require: false
 end
 
 group :development do

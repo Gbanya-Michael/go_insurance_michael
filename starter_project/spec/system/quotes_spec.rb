@@ -54,7 +54,7 @@ RSpec.describe 'Quotes flow', type: :system do
       if options.count > 1
         first_option = select_element.find('option:not([value=""])', match: :first)
         option_value = first_option.value
-        
+
         # Use JavaScript to trigger the change event which the form's JS listens for
         page.execute_script("
           const select = document.getElementById('destination-select');
@@ -62,7 +62,7 @@ RSpec.describe 'Quotes flow', type: :system do
           const event = new Event('change', { bubbles: true });
           select.dispatchEvent(event);
         ")
-        
+
         # Wait for JavaScript to create the hidden input (it's hidden, so check without visible filter)
         expect(page).to have_css('input[name="quote[destination_ids][]"]', visible: :all, wait: 2)
       else
@@ -83,7 +83,7 @@ RSpec.describe 'Quotes flow', type: :system do
 
       # Wait for redirect or check for validation errors
       sleep 1
-      
+
       # If we're still on the form, check for errors
       if page.current_path == '/quotes' || page.current_path == '/quotes/new'
         # Check if there are validation errors displayed
@@ -116,13 +116,13 @@ RSpec.describe 'Quotes flow', type: :system do
       expect(page).to have_content('Travel Insurance Quote')
       # Check that we're still on the form page (not redirected)
       # The path should be /quotes (POST redirects back to form on error)
-      expect(['/quotes', '/quotes/new']).to include(page.current_path)
+      expect([ '/quotes', '/quotes/new' ]).to include(page.current_path)
     end
 
     it 'validates child must travel with adult' do
       # Ensure destinations exist
       destination = Destination.first || create(:destination)
-      
+
       visit new_quote_path
 
       # Fill in child age without adult
@@ -140,7 +140,7 @@ RSpec.describe 'Quotes flow', type: :system do
         if select_element.all('option').count > 1
           first_option = select_element.find('option:not([value=""])', match: :first)
           option_value = first_option.value
-          
+
           # Use JavaScript to trigger the change event
           page.execute_script("
             const select = document.getElementById('destination-select');
@@ -152,13 +152,13 @@ RSpec.describe 'Quotes flow', type: :system do
           expect(page).to have_css('input[name="quote[destination_ids][]"]', visible: :all, wait: 2)
         end
       end
-      
+
       # Select trip type and excess
       if page.has_field?('quote[trip_type_id]', type: :radio)
         first_trip_type = find('input[type="radio"][name="quote[trip_type_id]"]', match: :first)
         first_trip_type.choose
       end
-      
+
       if page.has_field?('quote[excess_id]', type: :radio)
         first_excess = find('input[type="radio"][name="quote[excess_id]"]', match: :first)
         first_excess.choose
@@ -209,7 +209,7 @@ RSpec.describe 'Quotes flow', type: :system do
       # Check snow add-on - find by ID
       snow_checkbox = find('#quote_snow', visible: :all)
       snow_checkbox.check
-      
+
       # Manually trigger the JavaScript function to show date fields
       # Directly manipulate DOM to show the fields
       page.execute_script("
@@ -220,17 +220,16 @@ RSpec.describe 'Quotes flow', type: :system do
           dateContainer.classList.remove('hidden');
         }
       ")
-      
+
       # Wait for the container to become visible
       expect(page).to have_css('#snow-dates', wait: 5)
-      
+
       # Check that hidden class is removed
       expect(page).not_to have_css('#snow-dates.hidden')
-      
+
       # The date fields should now be visible
       expect(page).to have_field('snow_start_date', wait: 2)
       expect(page).to have_field('snow_end_date', wait: 2)
     end
   end
 end
-

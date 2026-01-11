@@ -46,12 +46,12 @@ class PremiumCalculator
   private
 
   def invalid_inputs?
-    @travellers.blank? || @start_date.nil? || @end_date.nil? || 
+    @travellers.blank? || @start_date.nil? || @end_date.nil? ||
       @destination_ids.blank? || @trip_type_id.nil? || @excess_id.nil?
   end
 
   def find_base_premium
-    Premium.find_by(premium_type: 'base')
+    Premium.find_by(premium_type: "base")
   end
 
   def calculate_for_cover(cover, base_premium)
@@ -123,11 +123,11 @@ class PremiumCalculator
   end
 
   def find_age_multiplier(age)
-    Age.where('age_minimum <= ? AND age_maximum >= ?', age, age).first
+    Age.where("age_minimum <= ? AND age_maximum >= ?", age, age).first
   end
 
   def find_duration_multiplier(days)
-    Duration.where('minimum_days <= ? AND maximum_days >= ?', days, days).first
+    Duration.where("minimum_days <= ? AND maximum_days >= ?", days, days).first
   end
 
   def find_destination_multiplier
@@ -153,4 +153,3 @@ class PremiumCalculator
     nil
   end
 end
-

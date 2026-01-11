@@ -40,7 +40,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
       if options.count > 1
         first_option = select_element.find('option:not([value=""])', match: :first)
         option_value = first_option.value
-        
+
         # Use JavaScript to trigger the change event which the form's JS listens for
         page.execute_script("
           const select = document.getElementById('destination-select');
@@ -48,7 +48,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
           const event = new Event('change', { bubbles: true });
           select.dispatchEvent(event);
         ")
-        
+
         # Wait for JavaScript to create the hidden input (it's hidden, so check without visible filter)
         expect(page).to have_css('input[name="quote[destination_ids][]"]', visible: :all, wait: 2)
       else
@@ -66,14 +66,14 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
       # Step 6: Submit form
       # Get the most recent quote ID before submission
       last_quote_id = Quote.maximum(:id) || 0
-      
+
       # Submit form
       click_button 'Get Quote'
 
       # Step 7: Verify quote page loads - wait for redirect
       # Wait a moment for form processing
       sleep 2
-      
+
       # Check if we're on the show page or if we need to navigate
       if page.current_path.match?(/\/quotes\/\d+/)
         # Already on show page - verify content
@@ -86,7 +86,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
           puts "Validation errors: #{error_text}"
           # For now, we'll check if quote was created anyway
         end
-        
+
         # Check if quote was created even though redirect didn't happen
         new_quote_id = Quote.maximum(:id) || 0
         if new_quote_id > last_quote_id
@@ -107,13 +107,13 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
           end
         end
       end
-      
+
       # Only check for covers if we're on the show page
       if page.current_path.match?(/\/quotes\/\d+/)
         # Verify we're on the show page with expected content
         # Check that at least one cover is displayed (the actual covers depend on what's in the database)
         expect(page).to have_css('h3.text-lg', minimum: 1) # At least one cover heading
-        
+
         # Verify a new quote was actually created
         new_quote_id = Quote.maximum(:id) || 0
         expect(new_quote_id).to be > last_quote_id
@@ -131,7 +131,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
         # Step 9: Test snow add-on
         snow_checkbox = find('input#quote_snow', visible: :all, wait: 2)
         snow_checkbox.check
-        
+
         # Manually trigger JavaScript to show date fields
         page.execute_script("
           const checkbox = document.getElementById('quote_snow');
@@ -141,11 +141,11 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
             dateContainer.classList.remove('hidden');
           }
         ")
-        
+
         # Wait for date fields to appear
         expect(page).to have_css('#snow-dates', wait: 5)
         expect(page).not_to have_css('#snow-dates.hidden')
-        
+
         # Fill in snow dates
         snow_start = start_date + 2.days
         snow_end = start_date + 5.days
@@ -175,7 +175,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
       if options.count > 1
         first_option = select_element.find('option:not([value=""])', match: :first)
         option_value = first_option.value
-        
+
         # Use JavaScript to trigger the change event
         page.execute_script("
           const select = document.getElementById('destination-select');
@@ -183,13 +183,13 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
           const event = new Event('change', { bubbles: true });
           select.dispatchEvent(event);
         ")
-        
+
         # Wait for JavaScript to create the hidden input (it's hidden, so check without visible filter)
         expect(page).to have_css('input[name="quote[destination_ids][]"]', visible: :all, wait: 2)
       else
         skip "No destinations available in test database"
       end
-      
+
       trip_type_radio = find('input[type="radio"][name="quote[trip_type_id]"]', match: :first, wait: 2)
       trip_type_radio.choose
       excess_radio = find('input[type="radio"][name="quote[excess_id]"]', match: :first, wait: 2)
@@ -202,8 +202,7 @@ RSpec.describe 'Quotes flow end-to-end', type: :system do
       expect(page).to have_content('Travel Insurance Quote', wait: 5)
       # Check that we're still on the form page (not redirected to show page)
       # The path might be /quotes (POST), /quotes/new, or / (root)
-      expect(['/quotes', '/quotes/new', '/']).to include(page.current_path)
+      expect([ '/quotes', '/quotes/new', '/' ]).to include(page.current_path)
     end
   end
 end
-

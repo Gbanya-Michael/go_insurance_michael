@@ -7,6 +7,3 @@ FactoryBot.define do
     multiplier { 1.92413120908991 }
   end
 end
-
-
-

@@ -11,8 +11,8 @@ Rails.application.routes.draw do
 
   # Defines the root path route ("/")
   root "quotes#new"
-  
+
   get "/quotes", to: redirect("/")
-  
-  resources :quotes, only: [:new, :create, :show, :update]
+
+  resources :quotes, only: [ :new, :create, :show, :update ]
 end

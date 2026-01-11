@@ -10,6 +10,3 @@ FactoryBot.define do
     ski_per_day_amount { 25.0 }
   end
 end
-
-
-

@@ -11,10 +11,10 @@ RSpec.describe PremiumCalculator do
 
   let(:valid_params) do
     {
-      travellers: [{ age: 30 }],
+      travellers: [ { age: 30 } ],
       start_date: (Date.today + 1.month).to_s,
       end_date: (Date.today + 1.month + 7.days).to_s,
-      destination_ids: [destination.id],
+      destination_ids: [ destination.id ],
       trip_type_id: trip_type.id,
       excess_id: excess.id
     }
@@ -32,7 +32,7 @@ RSpec.describe PremiumCalculator do
       it 'returns premiums for all covers' do
         calculator = PremiumCalculator.new(valid_params)
         premiums = calculator.calculate_premiums
-        
+
         expect(premiums).to be_a(Hash)
         expect(premiums.keys.length).to eq(Cover.count)
       end
@@ -40,7 +40,7 @@ RSpec.describe PremiumCalculator do
       it 'calculates base premium correctly' do
         calculator = PremiumCalculator.new(valid_params)
         premiums = calculator.calculate_premiums
-        
+
         premiums.each do |_cover_id, premium_data|
           expect(premium_data[:base_premium]).to be > 0
           expect(premium_data[:final_premium]).to be >= premium_data[:base_premium]
@@ -53,7 +53,7 @@ RSpec.describe PremiumCalculator do
         params_with_cruise = valid_params.merge(cruise: true)
         calculator = PremiumCalculator.new(params_with_cruise)
         premiums = calculator.calculate_premiums
-        
+
         premiums.each do |_cover_id, premium_data|
           expect(premium_data[:cruise_add_on]).to be > 0
           expect(premium_data[:final_premium]).to be > premium_data[:base_premium]
@@ -70,7 +70,7 @@ RSpec.describe PremiumCalculator do
         )
         calculator = PremiumCalculator.new(params_with_snow)
         premiums = calculator.calculate_premiums
-        
+
         premiums.each do |_cover_id, premium_data|
           expect(premium_data[:snow_add_on]).to be > 0
           expect(premium_data[:final_premium]).to be > premium_data[:base_premium]
@@ -99,7 +99,7 @@ RSpec.describe PremiumCalculator do
     let(:destination3) { create(:destination, zone: 2) }
 
     it 'returns destination with highest zone' do
-      params = valid_params.merge(destination_ids: [destination1.id, destination2.id, destination3.id])
+      params = valid_params.merge(destination_ids: [ destination1.id, destination2.id, destination3.id ])
       calculator = PremiumCalculator.new(params)
       expect(calculator.highest_zone_destination.zone).to eq(3)
     end
@@ -118,6 +118,3 @@ RSpec.describe PremiumCalculator do
     end
   end
 end
-
-
-

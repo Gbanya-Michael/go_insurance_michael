@@ -17,8 +17,8 @@ RSpec.describe Quote, type: :model do
     let(:destination2) { create(:destination) }
 
     it 'returns array of destination ids' do
-      quote.destinations << [destination1, destination2]
-      expect(quote.destination_ids).to match_array([destination1.id, destination2.id])
+      quote.destinations << [ destination1, destination2 ]
+      expect(quote.destination_ids).to match_array([ destination1.id, destination2.id ])
     end
   end
 
@@ -28,12 +28,9 @@ RSpec.describe Quote, type: :model do
     let(:destination2) { create(:destination) }
 
     it 'sets destinations from ids array' do
-      quote.destination_ids = [destination1.id, destination2.id]
+      quote.destination_ids = [ destination1.id, destination2.id ]
       quote.save
-      expect(quote.destinations).to match_array([destination1, destination2])
+      expect(quote.destinations).to match_array([ destination1, destination2 ])
     end
   end
 end
-
-
-
