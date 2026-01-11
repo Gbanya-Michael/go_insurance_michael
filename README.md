@@ -80,7 +80,7 @@ Before getting started, ensure you have:
 - Ruby 3.3.9 (or compatible version)
 - Rails 8.1.1
 - SQLite3
-- Node.js and npm (for Tailwind CSS compilation)
+- Node.js (>=18.0.0) and Yarn (>=1.22.0) for Tailwind CSS compilation
 
 ## Setup Instructions
 
@@ -90,7 +90,11 @@ Before getting started, ensure you have:
 
    ```bash
    bundle install
+   cd starter_project
+   yarn install
    ```
+
+   This installs both Ruby gems and Node.js packages (Tailwind CSS and build tools).
 
 2. **Set up the database**:
 
@@ -101,11 +105,13 @@ Before getting started, ensure you have:
 
    This creates all necessary tables and loads test data from fixtures located in `test/fixtures/`.
 
-3. **Start the server**:
+4. **Start the server**:
 
    ```bash
    rails server
    ```
+
+   **Optional:** Run `yarn watch:css` in a separate terminal for auto-recompiling CSS during development.
 
 4. **Access the application**:
    Open your browser and navigate to `http://localhost:3000`
@@ -290,6 +296,10 @@ The codebase follows Rails conventions with clear separation of concerns:
 
 The application uses Tailwind CSS for styling, providing a clean and responsive interface. The color scheme uses a teal accent color (#01A0C4) for primary actions and highlights which I beleive is the color for go insurance.
 
+#### CSS Build Process
+
+Tailwind CSS v4 requires compilation via `package.json` scripts. Development: `yarn watch:css` (auto-recompiles on changes). Production: `yarn build:css` (compiles `app/assets/tailwind/application.css` → `app/assets/builds/tailwind.css`). Docker builds CSS automatically during image creation.
+
 ### JavaScript Functionality
 
 Real-time premium updates are handled with vanilla JavaScript (no framework dependencies). The script:
@@ -316,14 +326,7 @@ From the `starter_project` directory:
 docker build -t travel-insurance .
 ```
 
-This will:
-
-- Build a multi-stage Docker image
-- Install all dependencies
-- Precompile assets
-- Create an optimized production-ready image
-
-**Note**: The build process may take several minutes on first run.
+The Dockerfile automatically installs Node.js, builds Tailwind CSS, and precompiles assets. Build may take several minutes on first run.
 
 ### Running the Container
 

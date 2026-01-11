@@ -38,3 +38,13 @@
 
 /app/assets/builds/*
 !/app/assets/builds/.keep
+
+# Node.js dependencies
+/node_modules
+/yarn-error.log
+/.yarn-integrity
+
+# Note: The compiled CSS file (app/assets/builds/application.css) is ignored by default.
+# For production deployments, either:
+# 1. Build it in CI/CD: `yarn build:css` before deployment
+# 2. Or commit it by adding `!/app/assets/builds/application.css` above
