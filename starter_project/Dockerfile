@@ -30,22 +30,10 @@ ENV RAILS_ENV="production" \
 # Throw-away build stage to reduce size of final image
 FROM base AS build
 
-# Install packages needed to build gems and Node.js for Tailwind CSS compilation
-# Using official NodeSource repository for Node.js LTS (v20.x)
+# Install packages needed to build gems
 RUN apt-get update -qq && \
-    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config curl ca-certificates gnupg && \
-    # Install Node.js v20 LTS from NodeSource (official repository)
-    curl -fsSL https://deb.nodesource.com/gpgkey/nodesource-repo.gpg.key | gpg --dearmor -o /etc/apt/keyrings/nodesource.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/nodesource.gpg] https://deb.nodesource.com/node_20.x nodistro main" | tee /etc/apt/sources.list.d/nodesource.list > /dev/null && \
-    # Install Yarn from official repository
-    curl -fsSL https://dl.yarnpkg.com/debian/pubkey.gpg | gpg --dearmor -o /usr/share/keyrings/yarn-archive-keyring.gpg && \
-    echo "deb [signed-by=/usr/share/keyrings/yarn-archive-keyring.gpg] https://dl.yarnpkg.com/debian stable main" | tee /etc/apt/sources.list.d/yarn.list > /dev/null && \
-    apt-get update -qq && \
-    apt-get install --no-install-recommends -y nodejs yarn && \
-    rm -rf /var/lib/apt/lists /var/cache/apt/archives && \
-    # Verify installations
-    node --version && \
-    yarn --version
+    apt-get install --no-install-recommends -y build-essential git libyaml-dev pkg-config && \
+    rm -rf /var/lib/apt/lists /var/cache/apt/archives
 
 # Install application gems
 COPY Gemfile Gemfile.lock vendor ./
@@ -55,39 +43,14 @@ RUN bundle install && \
     # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
     bundle exec bootsnap precompile -j 1 --gemfile
 
-# Copy package files for Node.js dependency installation (better layer caching)
-# This allows Docker to cache node_modules layer separately from application code
-COPY package.json yarn.lock* ./
-
-# Install Node.js dependencies
-# Using --frozen-lockfile for reproducible builds (fails if yarn.lock is missing, which is good for production)
-RUN if [ -f package.json ]; then \
-      if [ -f yarn.lock ]; then \
-        yarn install --frozen-lockfile --production=false; \
-      else \
-        echo "Warning: yarn.lock not found. Consider committing yarn.lock for reproducible builds." && \
-        yarn install --production=false; \
-      fi; \
-    fi
-
-# Copy application code (needed for Rails commands)
+# Copy application code
 COPY . .
-
-# Build Tailwind CSS using Rails command (requires application code and gems to be present)
-# This must happen before assets:precompile so the compiled CSS is available
-# The tailwindcss-rails gem provides bin/rails tailwindcss:build command
-RUN if [ -f package.json ]; then \
-      ./bin/rails tailwindcss:build && \
-      # Clean up node_modules to reduce image size (only compiled CSS is needed)
-      rm -rf node_modules; \
-    fi
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
 RUN bundle exec bootsnap precompile -j 1 app/ lib/
 
 # Precompiling assets for production without requiring secret RAILS_MASTER_KEY
-# Note: This step includes the compiled Tailwind CSS from the previous step
 RUN SECRET_KEY_BASE_DUMMY=1 ./bin/rails assets:precompile
 
 
