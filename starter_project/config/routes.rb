@@ -15,4 +15,8 @@ Rails.application.routes.draw do
   get "/quotes", to: redirect("/")
 
   resources :quotes, only: [ :new, :create, :show, :update ]
+
+  # Catch-all route for 404 errors - must be last
+  # Rails will handle /rails, /assets, etc. before this route is matched
+  match "*path", to: "errors#not_found", via: :all
 end

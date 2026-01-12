@@ -48,6 +48,11 @@ class QuotesController < ApplicationController
 
   def set_quote
     @quote = Quote.find(params[:id])
+  rescue ActiveRecord::RecordNotFound
+    # Log the error for monitoring
+    Rails.logger.warn("Quote not found: ID #{params[:id]} from #{request.remote_ip}")
+    # Render 404 instead of redirecting to maintain proper HTTP status
+    render "errors/not_found", status: :not_found, layout: "application"
   end
 
   def load_form_data
