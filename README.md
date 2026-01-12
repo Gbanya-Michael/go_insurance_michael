@@ -6,9 +6,12 @@ A Ruby on Rails app for calculating travel insurance premiums with three coverag
 
 ```bash
 # Install dependencies
-bundle install
 cd starter_project
+bundle install
 yarn install
+
+#Build CSS
+rails tailwindcss:build
 
 # Setup database
 rails db:prepare
@@ -18,7 +21,9 @@ rails db:fixtures:load
 rails server
 ```
 
-Visit `http://localhost:3000`. For CSS auto-recompilation during development, run `yarn watch:css` in a separate terminal.
+Visit `http://localhost:3000`
+
+For CSS auto-recompilation during development, run `yarn watch:css` in a separate terminal.
 
 ## Features
 
@@ -56,7 +61,9 @@ bundle exec rspec spec/controllers/   # Controller tests
 bundle exec rspec spec/system/       # E2E tests (requires Chrome/Firefox)
 ```
 
-**Test Coverage**: 239 examples. Comprehensive coverage of premium calculation logic, validations, and user flows. JavaScript tested via system/E2E tests.
+**Test Coverage**: 239 examples
+Comprehensive coverage of premium calculation logic, validations, and user flows.
+JavaScript is tested via system/E2E tests.
 
 ## Docker
 
