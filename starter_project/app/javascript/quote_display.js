@@ -76,6 +76,12 @@
       coverRadios.forEach((radio) => {
         radio.addEventListener("change", () => this.updatePremiums());
       });
+
+      // Email quote form
+      const emailForm = document.getElementById("email-quote-form");
+      if (emailForm) {
+        emailForm.addEventListener("submit", (e) => this.handleEmailSubmit(e));
+      }
     },
 
     // Toggle visibility of snow/ski date fields
@@ -200,6 +206,51 @@
         currency: "USD",
         minimumFractionDigits: 2,
       }).format(amount);
+    },
+
+    // Handle email quote form submission
+    handleEmailSubmit: function (e) {
+      e.preventDefault();
+
+      const emailInput = document.getElementById("email-address");
+      const emailAddress = emailInput?.value.trim();
+
+      if (!emailAddress) {
+        return;
+      }
+
+      // Update the sent email address in the message
+      const sentEmailSpan = document.getElementById("sent-email-address");
+      if (sentEmailSpan) {
+        sentEmailSpan.textContent = emailAddress;
+      }
+
+      // Update premium amounts in the email message (use current calculated values)
+      this.config.coverIds.forEach((coverId) => {
+        const finalPremiumEl = document.getElementById(`final-${coverId}`);
+        const emailPremiumEl = document.getElementById(
+          `email-premium-${coverId}`
+        );
+        if (finalPremiumEl && emailPremiumEl) {
+          emailPremiumEl.textContent = finalPremiumEl.textContent;
+        }
+      });
+
+      // Show the email sent message
+      const emailSentMessage = document.getElementById("email-sent-message");
+      if (emailSentMessage) {
+        emailSentMessage.classList.remove("hidden");
+        // Scroll to the message
+        emailSentMessage.scrollIntoView({
+          behavior: "smooth",
+          block: "nearest",
+        });
+      }
+
+      // Reset the form
+      if (emailInput) {
+        emailInput.value = "";
+      }
     },
   };
 
