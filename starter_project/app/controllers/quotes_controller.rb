@@ -53,6 +53,8 @@ class QuotesController < ApplicationController
     Rails.logger.warn("Quote not found: ID #{params[:id]} from #{request.remote_ip}")
     # Render 404 instead of redirecting to maintain proper HTTP status
     render "errors/not_found", status: :not_found, layout: "application"
+    # Stop execution to prevent further action execution
+    return
   end
 
   def load_form_data

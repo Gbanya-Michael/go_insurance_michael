@@ -56,7 +56,7 @@ bundle exec rspec spec/controllers/   # Controller tests
 bundle exec rspec spec/system/       # E2E tests (requires Chrome/Firefox)
 ```
 
-**Test Coverage**: 198 examples. Comprehensive coverage of premium calculation logic, validations, and user flows. JavaScript tested via system/E2E tests.
+**Test Coverage**: 239 examples. Comprehensive coverage of premium calculation logic, validations, and user flows. JavaScript tested via system/E2E tests.
 
 ## Docker
 
