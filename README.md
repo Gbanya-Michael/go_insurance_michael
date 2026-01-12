@@ -23,7 +23,7 @@ rails server
 
 Visit `http://localhost:3000`
 
-For CSS auto-recompilation during development, run `yarn watch:css` in a separate terminal.
+For CSS auto-recompilation during development, run `yarn watch:css` in a separate terminal (or use `bin/rails tailwindcss:watch` via Procfile.dev).
 
 ## Features
 
@@ -105,4 +105,8 @@ The Dockerfile automatically installs Node.js, builds Tailwind CSS, and sets up 
 
 **Port in use**: `lsof -i :3000` or use `rails server -p 3001`
 
-**CSS not updating**: Run `yarn build:css` or `yarn watch:css`
+**CSS not updating**:
+
+- Development: Run `yarn watch:css` (auto-compiles on save) or `bin/rails tailwindcss:watch`
+- One-time build: Run `yarn build:css` or `bin/rails tailwindcss:build`
+- Note: Both approaches work; npm scripts for dev convenience, Rails commands for CI/production consistency
