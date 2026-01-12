@@ -317,6 +317,21 @@ RSpec.describe QuotesController, type: :controller do
       expect(response).to have_http_status(:success)
     end
 
+    it "returns 404 when quote does not exist" do
+      allow(Rails.logger).to receive(:warn)
+      get :show, params: { id: 99999 }
+      expect(response).to have_http_status(:not_found)
+      expect(response).to render_template("errors/not_found")
+    end
+
+    it "logs the error when quote does not exist" do
+      allow(Rails.logger).to receive(:warn)
+      get :show, params: { id: 99999 }
+      expect(Rails.logger).to have_received(:warn).with(
+        /Quote not found: ID 99999/
+      )
+    end
+
     it "renders the show template" do
       get :show, params: { id: quote.id }
       expect(response).to render_template(:show)
@@ -386,6 +401,13 @@ RSpec.describe QuotesController, type: :controller do
 
     before do
       quote.destinations << destination
+    end
+
+    it "returns 404 when quote does not exist" do
+      allow(Rails.logger).to receive(:warn)
+      patch :update, params: { id: 99999, quote: { cruise: true } }
+      expect(response).to have_http_status(:not_found)
+      expect(response).to render_template("errors/not_found")
     end
 
     context "with valid parameters" do
