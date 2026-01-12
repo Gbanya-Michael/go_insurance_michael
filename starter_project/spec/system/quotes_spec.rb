@@ -176,16 +176,15 @@ RSpec.describe 'Quotes flow', type: :system do
     let(:destination) { Destination.first || create(:destination) }
     let(:cover) { Cover.first || create(:cover) }
     let(:quote) do
-      Quote.create!(
-        age: 30,
-        start_date: Date.today + 1.month,
-        end_date: Date.today + 1.month + 7.days,
-        trip_type: trip_type,
-        excess: excess,
-        cover: cover
-      ).tap do |q|
-        q.destinations << destination
-      end
+      create(:quote,
+             travellers: [ { age: 30 } ],
+             age: 30,
+             start_date: Date.today + 1.month,
+             end_date: Date.today + 1.month + 7.days,
+             trip_type: trip_type,
+             excess: excess,
+             cover: cover,
+             destination_ids: [ destination.id ])
     end
 
     it 'displays quote details and allows add-on selection' do

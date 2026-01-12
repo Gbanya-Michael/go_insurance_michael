@@ -2,7 +2,7 @@
 # frozen_string_literal: true
 
 class TripType < ApplicationRecord
-  has_many :quotes, class_name: "Quote", dependent: :destroy, foreign_key: :id
+  has_many :quotes, class_name: "Quote", dependent: :destroy
 
   validates :trip_type, presence: true, uniqueness: true
   validates :label, presence: true

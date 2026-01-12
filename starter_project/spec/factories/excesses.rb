@@ -2,7 +2,7 @@
 
 FactoryBot.define do
   factory :excess do
-    label { "$200" }
+    sequence(:label) { |n| "$#{200 + n * 100}" }
     value { 200 }
     multiplier { 1.0 }
   end

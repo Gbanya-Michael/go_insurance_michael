@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :cover do
+    sequence(:cover_type) { |n| "cover_type_#{n}" }
     label { "Basic" }
-    cover_type { "basic" }
     multiplier { 1.0 }
   end
 end

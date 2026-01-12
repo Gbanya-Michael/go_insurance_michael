@@ -2,8 +2,8 @@
 
 FactoryBot.define do
   factory :trip_type do
+    sequence(:trip_type) { |n| "trip_type_#{n}" }
     label { "One Way" }
-    trip_type { "one_way" }
     multiplier { 1.0 }
   end
 end
