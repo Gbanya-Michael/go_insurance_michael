@@ -1,12 +1,13 @@
 {
   "name": "go-travel-insurance",
   "version": "1.0.0",
-  "description": "Travel insurance quote application - Tailwind CSS build configuration for development and production",
+  "description": "Travel insurance quote application - Tailwind CSS build configuration. Provides npm scripts for development convenience alongside Rails tailwindcss-rails gem commands for production/CI.",
   "private": true,
+  "license": "UNLICENSED",
   "scripts": {
     "build:css": "tailwindcss --minify -i ./app/assets/tailwind/application.css -o ./app/assets/builds/tailwind.css",
     "watch:css": "onchange -e \"app/assets/builds/**\" -i \"app/**/*.css\" \"app/**/*.html\" \"app/**/*.erb\" \"app/**/*.rb\" \"vendor/**/*.css\" -- yarn build:css",
-    "postinstall": "echo 'Run yarn build:css to compile Tailwind CSS, or yarn watch:css for development'"
+    "postinstall": "echo 'Tailwind CSS installed. Use: yarn watch:css for development or bin/rails tailwindcss:build (CI/production)'"
   },
   "devDependencies": {
     "onchange": "^7.1.0",
@@ -17,4 +18,3 @@
     "yarn": ">=1.22.0"
   }
 }
-

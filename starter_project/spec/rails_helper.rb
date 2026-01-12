@@ -46,6 +46,8 @@ RSpec.configure do |config|
   # If you're not using ActiveRecord, or you'd prefer not to run each of your
   # examples within a transaction, remove the following line or assign false
   # instead of true.
+  # System tests automatically use truncation strategy instead of transactions
+  # because they run in separate threads. This is handled by Rails automatically.
   config.use_transactional_fixtures = true
 
   # You can uncomment this line to turn off ActiveRecord support entirely.

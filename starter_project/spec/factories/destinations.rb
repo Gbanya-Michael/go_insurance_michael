@@ -2,7 +2,18 @@
 
 FactoryBot.define do
   factory :destination do
-    sequence(:code) { |n| "TEST#{n}" }
+    # Find next available code number to avoid uniqueness conflicts
+    # This handles cases where the database isn't fully cleaned between test runs
+    sequence(:code) do |n|
+      # Start from n, but if that code exists, find the next available
+      code = "TEST#{n}"
+      counter = n
+      while Destination.exists?(code: code)
+        counter += 1
+        code = "TEST#{counter}"
+      end
+      code
+    end
     zone { 1 }
     label { "Test Destination" }
     multiplier { 1.4 }

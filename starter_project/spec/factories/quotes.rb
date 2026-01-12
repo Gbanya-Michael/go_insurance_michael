@@ -14,9 +14,13 @@ FactoryBot.define do
 
     after(:build) do |quote|
       # Ensure at least one destination is set via destination_ids
-      # This bypasses validation during factory build
-      destination = create(:destination)
-      quote.destination_ids = [ destination.id ]
+      # Only set if not already provided (allows tests to pass destination_ids explicitly)
+      # This prevents the factory from overwriting explicitly provided destination_ids
+      # Note: The destination factory handles uniqueness conflicts automatically
+      if quote.destination_ids.blank?
+        destination = Destination.first || create(:destination)
+        quote.destination_ids = [ destination.id ]
+      end
     end
 
     after(:create) do |quote|
