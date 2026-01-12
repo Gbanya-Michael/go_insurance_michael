@@ -59,25 +59,28 @@ RUN bundle install && \
 # This allows Docker to cache node_modules layer separately from application code
 COPY package.json yarn.lock* ./
 
-# Install Node.js dependencies and build Tailwind CSS
-# This must happen before assets:precompile so the compiled CSS is available
+# Install Node.js dependencies
 # Using --frozen-lockfile for reproducible builds (fails if yarn.lock is missing, which is good for production)
 RUN if [ -f package.json ]; then \
       if [ -f yarn.lock ]; then \
-        yarn install --frozen-lockfile --production=false && \
-        yarn build:css && \
-        # Clean up node_modules to reduce image size (only compiled CSS is needed)
-        rm -rf node_modules; \
+        yarn install --frozen-lockfile --production=false; \
       else \
         echo "Warning: yarn.lock not found. Consider committing yarn.lock for reproducible builds." && \
-        yarn install --production=false && \
-        yarn build:css && \
-        rm -rf node_modules; \
+        yarn install --production=false; \
       fi; \
     fi
 
-# Copy application code (after Node.js build for better caching)
+# Copy application code (needed for Rails commands)
 COPY . .
+
+# Build Tailwind CSS using Rails command (requires application code and gems to be present)
+# This must happen before assets:precompile so the compiled CSS is available
+# The tailwindcss-rails gem provides bin/rails tailwindcss:build command
+RUN if [ -f package.json ]; then \
+      ./bin/rails tailwindcss:build && \
+      # Clean up node_modules to reduce image size (only compiled CSS is needed)
+      rm -rf node_modules; \
+    fi
 
 # Precompile bootsnap code for faster boot times.
 # -j 1 disable parallel compilation to avoid a QEMU bug: https://github.com/rails/bootsnap/issues/495
